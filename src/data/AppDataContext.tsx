@@ -144,8 +144,14 @@ useEffect(() => {
 
   const seedSuggestedSubjects: AppDataCtx['seedSuggestedSubjects'] = useCallback((names) => {
     setData((prev) => {
+      // Idempotency guard: never add a subject that (by name) already
+      // exists locally. Without this, re-entering onboarding -- whether
+      // through a bug, a direct nav to /onboarding, or a future sync
+      // replay -- would keep minting duplicate subject rows with fresh
+      // ids for the same names.
+      const existingNames = new Set(prev.subjects.map((s) => s.name.trim().toLowerCase()))
       const toAdd: Subject[] = SUGGESTED_SUBJECTS
-        .filter((s) => names.includes(s.name))
+        .filter((s) => names.includes(s.name) && !existingNames.has(s.name.trim().toLowerCase()))
         .map((s, i) => ({
           ...s,
           id: uid(),
@@ -153,9 +159,10 @@ useEffect(() => {
           targetWeeklyMinutes: 120,
           examDate: null,
           archived: false,
-          order: i,
+          order: prev.subjects.length + i,
           createdAt: new Date().toISOString(),
         }))
+      if (!toAdd.length) return prev
       toAdd.forEach((s) => store.putSubject(s))
       return { ...prev, subjects: [...prev.subjects, ...toAdd] }
     })
@@ -294,7 +301,12 @@ useEffect(() => {
   const updateSettings: AppDataCtx['updateSettings'] = useCallback((patch) => {
     setData((prev) => {
       const settings = { ...prev.settings, ...patch }
-      store.saveSettings(settings)
+      // Not awaited (state update stays synchronous), but a failure here
+      // must not vanish silently -- that silent failure is exactly what
+      // previously kept onboardingComplete from ever reaching IndexedDB.
+      store.saveSettings(settings).catch((error) => {
+        console.error('Grove: failed to persist settings.', error)
+      })
       return { ...prev, settings }
     })
   }, [])

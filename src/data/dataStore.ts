@@ -16,21 +16,51 @@ import { emptyAppData, DEFAULT_SETTINGS } from './defaults'
  */
 
 const DB_NAME = 'grove-db'
-const DB_VERSION = 1
+// v1 -> v2: 'settings' and 'world' were created as out-of-line-key stores
+// (keyPath: undefined), but every write to them (saveSettings/saveWorld)
+// called db.put(store, item) without ever supplying the required key
+// argument. Per the IndexedDB spec, put() on an out-of-line-key store with
+// no key throws a DataError immediately -- so those writes always failed
+// silently and NOTHING was ever actually saved to either store. That's why
+// `onboardingComplete` never survived a reload (it always fell back to
+// DEFAULT_SETTINGS) even though other stores with in-line keys (subjects,
+// sessions, etc., keyPath: 'id') persisted correctly the whole time.
+//
+// The fix: give these two singleton stores an in-line keyPath ('key') that
+// matches the `{ key, value }` shape saveSettings/saveWorld already write,
+// so db.put() can derive the key from the item itself. Since every prior
+// write to these stores threw before completing, they are guaranteed to be
+// empty (or missing) on any existing database, so recreating them on
+// upgrade is safe and loses no user data.
+const DB_VERSION = 2
 
 const STORES = [
   'settings', 'subjects', 'topics', 'tasks', 'sessions', 'wellness', 'routine', 'world', 'achievements',
 ] as const
+
+const SINGLETON_STORES = new Set(['settings', 'world'])
 
 let dbPromise: Promise<IDBPDatabase> | null = null
 
 function getDB() {
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
+      upgrade(db, oldVersion) {
+        if (oldVersion > 0 && oldVersion < 2) {
+          // Migrating from the broken v1 schema: these stores never held
+          // any real data (every write to them threw), so it's safe to
+          // drop and recreate them with a working keyPath. Everything else
+          // (subjects, topics, tasks, sessions, wellness, routine,
+          // achievements) is left completely untouched.
+          for (const store of SINGLETON_STORES) {
+            if (db.objectStoreNames.contains(store)) {
+              db.deleteObjectStore(store)
+            }
+          }
+        }
         for (const store of STORES) {
           if (!db.objectStoreNames.contains(store)) {
-            db.createObjectStore(store, { keyPath: store === 'settings' || store === 'world' ? undefined : 'id' })
+            db.createObjectStore(store, { keyPath: SINGLETON_STORES.has(store) ? 'key' : 'id' })
           }
         }
       },
@@ -57,7 +87,15 @@ async function putAll(store: string, items: any[]) {
 
 async function putOne(store: string, item: any) {
   const db = await getDB()
-  await db.put(store, item)
+  try {
+    await db.put(store, item)
+  } catch (error) {
+    // A silent failure here is exactly what caused onboardingComplete to
+    // never persist in the past (see DB_VERSION note above) -- surface any
+    // future write failure loudly instead of losing it quietly.
+    console.error(`Grove: failed to write to IndexedDB store "${store}".`, error)
+    throw error
+  }
 }
 
 async function deleteOne(store: string, id: string) {
