@@ -4,11 +4,12 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  base: '/Grove/',
+  base: '/',
 
   plugins: [
     react(),
     tailwindcss(),
+
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/*.svg'],
@@ -21,22 +22,23 @@ export default defineConfig({
         background_color: '#0f1712',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/grove-study-world/',
+        start_url: '/',
+        scope: '/',
         icons: [
           {
-            src: 'icons/icon-192.svg',
+            src: '/icons/icon-192.svg',
             sizes: '192x192',
             type: 'image/svg+xml',
             purpose: 'any',
           },
           {
-            src: 'icons/icon-512.svg',
+            src: '/icons/icon-512.svg',
             sizes: '512x512',
             type: 'image/svg+xml',
             purpose: 'any',
           },
           {
-            src: 'icons/icon-maskable-512.svg',
+            src: '/icons/icon-maskable-512.svg',
             sizes: '512x512',
             type: 'image/svg+xml',
             purpose: 'maskable',
@@ -46,7 +48,7 @@ export default defineConfig({
 
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
-        navigateFallback: '/grove-study-world/index.html',
+        navigateFallback: '/index.html',
       },
 
       devOptions: {
