@@ -1,13 +1,11 @@
 import { useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Download, Upload, AlertTriangle, CloudCheck, CloudOff, ChevronRight } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Download, Upload, AlertTriangle } from 'lucide-react'
 import { useAppData } from '../data/AppDataContext'
-import { useSync } from '../data/SyncContext'
 import { Card, PageHeader, Button } from '../components/ui'
 
 export default function Settings() {
   const { data, updateSettings, exportData, importData, resetData } = useAppData()
-  const { available, user, status, pendingMerge } = useSync()
   const navigate = useNavigate()
   const fileRef = useRef<HTMLInputElement>(null)
   const [confirmingReset, setConfirmingReset] = useState(false)
@@ -45,31 +43,6 @@ export default function Settings() {
   return (
     <div className="animate-rise">
       <PageHeader title="Settings" settingsLink={false} back="/" />
-
-      <Card className="mb-4">
-        <Link to="/account" className="flex items-center justify-between">
-          <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-mist-600">Account</p>
-            {available && user ? (
-              <>
-                <p className="text-sm text-mist-100">{user.email}</p>
-                <p className="mt-1 flex items-center gap-1.5 text-xs text-mist-500">
-                  {status === 'synced'
-                    ? <CloudCheck size={13} className="text-moss-400" />
-                    : <CloudOff size={13} />}
-                  {pendingMerge ? 'Sync pending' : status === 'synced' ? 'Synced' : status === 'syncing' ? 'Syncing…' : status === 'offline' ? 'Offline' : 'Saved locally'}
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-sm text-mist-100">Not signed in</p>
-                <p className="mt-1 text-xs text-mist-500">Sync your Grove across devices.</p>
-              </>
-            )}
-          </div>
-          <ChevronRight size={18} className="text-mist-600" />
-        </Link>
-      </Card>
 
       <Section title="Profile">
         <Field label="Your name">
@@ -128,7 +101,7 @@ export default function Settings() {
 
       <Section title="Data">
         <p className="mb-3 text-xs text-mist-600">
-          Grove stores everything on this device{available ? ', with optional account sync above' : ''}. Export a backup so you never lose progress if you switch browsers or phones.
+          Grove stores everything on this device only. Export a backup so you never lose progress if you switch browsers or phones.
         </p>
         <div className="mb-3 flex gap-2">
           <Button variant="secondary" onClick={handleExport} className="flex-1">
@@ -165,7 +138,7 @@ export default function Settings() {
         )}
       </Section>
 
-      <p className="pb-6 pt-2 text-center text-xs text-mist-700">Grove · no ads, no subscriptions. Accounts are optional.</p>
+      <p className="pb-6 pt-2 text-center text-xs text-mist-700">Grove · no ads, no accounts, no subscriptions.</p>
     </div>
   )
 }

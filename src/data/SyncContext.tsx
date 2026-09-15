@@ -25,11 +25,6 @@ interface SyncCtx {
   available: boolean
   user: User | null
   authLoading: boolean
-  /** True while the post-sign-in fetch/merge is in flight. App.tsx waits on
-   *  this (in addition to authLoading) before deciding whether to route a
-   *  signed-in user into onboarding, so a returning user's cloud Grove has a
-   *  chance to load before that decision is made. */
-  initializing: boolean
   status: SyncStatus
   errorMessage: string | null
   pendingMerge: boolean
@@ -54,7 +49,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [pendingMerge, setPendingMerge] = useState(false)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
-  const [initializing, setInitializing] = useState(false)
 
   const dataRef = useRef(data)
   useEffect(() => {
@@ -84,7 +78,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         setPhase('local')
         setPendingMerge(false)
         setErrorMessage(null)
-        setInitializing(false)
       }
     })
     return unsubscribe
@@ -104,7 +97,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     async function initialSync(uid: string) {
       setPhase('syncing')
       setErrorMessage(null)
-      setInitializing(true)
       try {
         const remote = await fetchRemoteData(uid)
         if (cancelled) return
@@ -132,8 +124,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
           setErrorMessage('Couldn\u2019t reach your account. Grove is still saving on this device.')
           setPhase('error')
         }
-      } finally {
-        if (!cancelled) setInitializing(false)
       }
     }
 
@@ -221,7 +211,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   }, [available, user, isOnline, phase])
 
   const value: SyncCtx = {
-    available, user, authLoading, initializing, status, errorMessage, pendingMerge,
+    available, user, authLoading, status, errorMessage, pendingMerge,
     signUp, signIn, signOutUser, syncNow, confirmMergeLocal, dismissMerge,
   }
 

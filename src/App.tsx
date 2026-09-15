@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAppData } from './data/AppDataContext'
-import { useSync } from './data/SyncContext'
 import { BottomNav } from './components/BottomNav'
 import Home from './pages/Home'
 import Study from './pages/Study'
@@ -10,20 +9,12 @@ import World from './pages/World'
 import Settings from './pages/Settings'
 import Onboarding from './pages/Onboarding'
 import SubjectDetail from './pages/SubjectDetail'
-import Account from './pages/Account'
 
 export default function App() {
   const { loading, data } = useAppData()
-  const { authLoading, initializing, user } = useSync()
   const location = useLocation()
 
-  // While Firebase is confirming a persisted sign-in (or pulling down a
-  // returning user's cloud Grove right after sign-in), hold off on the
-  // onboarding decision below — otherwise a returning user briefly sees
-  // onboarding flash before their synced data loads in.
-  const settlingAccount = authLoading || (Boolean(user) && initializing)
-
-  if (loading || settlingAccount) {
+  if (loading) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-3 bg-earth-900">
         <div className="h-10 w-10 animate-pulse rounded-full bg-moss-500/40" />
@@ -32,15 +23,13 @@ export default function App() {
     )
   }
 
-  const needsOnboarding =
-    !data.settings.onboardingComplete && location.pathname !== '/onboarding' && location.pathname !== '/account'
+  const needsOnboarding = !data.settings.onboardingComplete && location.pathname !== '/onboarding'
 
   if (needsOnboarding) {
     return (
       <Routes>
         <Route path="*" element={<Navigate to="/onboarding" replace />} />
         <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/account" element={<Account />} />
       </Routes>
     )
   }
@@ -57,7 +46,6 @@ export default function App() {
           <Route path="/progress" element={<ProgressPage />} />
           <Route path="/world" element={<World />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/account" element={<Account />} />
           <Route path="/subjects/:id" element={<SubjectDetail />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="*" element={<Navigate to="/" replace />} />

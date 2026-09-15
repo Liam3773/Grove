@@ -116,8 +116,6 @@ export interface WorldObjectDef {
 export interface WorldState {
   unlockedObjectIds: ID[]
   worldName: string
-  /** ISO timestamp of the last change, used to resolve cross-device sync conflicts. */
-  updatedAt?: string
 }
 
 // ---------- Settings ----------
@@ -134,8 +132,6 @@ export interface Settings {
   defaultSessionMinutes: number
   worldName: string
   reducedMotion: boolean
-  /** ISO timestamp of the last change, used to resolve cross-device sync conflicts. */
-  updatedAt?: string
 }
 
 // ---------- Derived / computed ----------
