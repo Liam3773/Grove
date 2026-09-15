@@ -69,12 +69,28 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [lastDiscovery, setLastDiscovery] = useState<Discovery | null>(null)
 
-  useEffect(() => {
-    store.loadAppData().then((loaded) => {
+useEffect(() => {
+  let mounted = true
+
+  store.loadAppData()
+    .then((loaded) => {
+      if (!mounted) return
       setData(loaded)
       setLoading(false)
     })
-  }, [])
+    .catch((error) => {
+      console.error('Failed to load Grove data:', error)
+
+      if (!mounted) return
+
+      setData(emptyAppData())
+      setLoading(false)
+    })
+
+  return () => {
+    mounted = false
+  }
+}, [])
 
   const stats = useMemo(() => computeLifetimeStats(data), [data])
 
