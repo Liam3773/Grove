@@ -59,12 +59,11 @@ export function EmptyState({ title, body, action }: { title: string; body: strin
   )
 }
 
-export function Pill({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'moss' | 'amber' | 'red' }) {
+export function Pill({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'moss' | 'amber' }) {
   const tones: Record<string, string> = {
     neutral: 'bg-earth-700/60 text-mist-400',
     moss: 'bg-moss-500/15 text-moss-400',
     amber: 'bg-amber-500/15 text-amber-400',
-    red: 'bg-red-400/15 text-red-300',
   }
   return <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${tones[tone]}`}>{children}</span>
 }

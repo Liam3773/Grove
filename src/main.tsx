@@ -4,15 +4,12 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App'
 import { AppDataProvider } from './data/AppDataContext'
-import { SyncProvider } from './data/SyncContext'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <AppDataProvider>
-        <SyncProvider>
-          <App />
-        </SyncProvider>
+        <App />
       </AppDataProvider>
     </BrowserRouter>
   </StrictMode>,

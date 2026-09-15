@@ -17,9 +17,6 @@ export interface Subject {
   archived: boolean
   order: number
   createdAt: string
-  /** Last local edit time (ISO). Optional/undefined for records created before
-   *  cloud sync existed. Used by the sync layer to resolve conflicts. */
-  updatedAt?: string
 }
 
 export type TopicStatus = 'not_started' | 'learning' | 'practising' | 'confident' | 'mastered'
@@ -32,7 +29,6 @@ export interface Topic {
   minutesStudied: number
   order: number
   createdAt: string
-  updatedAt?: string
 }
 
 // ---------- Tasks ----------
@@ -52,7 +48,6 @@ export interface Task {
   createdAt: string
   /** Day-of-week (0=Mon..6=Sun) this task is planned for, used by the weekly planner */
   plannedDay: number | null
-  updatedAt?: string
 }
 
 // ---------- Study sessions ----------
@@ -83,7 +78,6 @@ export interface WellnessEntry {
   hydration: boolean
   mood: 1 | 2 | 3 | 4 | 5 | null
   breakTaken: boolean
-  updatedAt?: string
 }
 
 // ---------- Routine (repeating school week) ----------
@@ -94,7 +88,6 @@ export interface RoutineBlock {
   label: string
   subjectId: ID | null
   durationMinutes: number
-  updatedAt?: string
 }
 
 // ---------- Achievements ----------
@@ -123,7 +116,6 @@ export interface WorldObjectDef {
 export interface WorldState {
   unlockedObjectIds: ID[]
   worldName: string
-  updatedAt?: string
 }
 
 // ---------- Settings ----------
@@ -140,7 +132,6 @@ export interface Settings {
   defaultSessionMinutes: number
   worldName: string
   reducedMotion: boolean
-  updatedAt?: string
 }
 
 // ---------- Derived / computed ----------

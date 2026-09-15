@@ -100,7 +100,7 @@ useEffect(() => {
     const achResult = evaluateAchievements(nextStats, nextData.achievements.map((a) => a.id))
 
     if (worldResult.newlyUnlocked.length || achResult.newlyUnlocked.length) {
-      const newWorld = { ...nextData.world, unlockedObjectIds: worldResult.unlockedIds, updatedAt: new Date().toISOString() }
+      const newWorld = { ...nextData.world, unlockedObjectIds: worldResult.unlockedIds }
       const newAch = [
         ...nextData.achievements,
         ...achResult.newlyUnlocked.map((a) => ({ id: a.id, unlockedAt: new Date().toISOString() })),
@@ -117,8 +117,7 @@ useEffect(() => {
 
   // ---------- Subjects ----------
   const addSubject: AppDataCtx['addSubject'] = useCallback((s) => {
-    const now = new Date().toISOString()
-    const subject: Subject = { ...s, id: uid(), createdAt: now, updatedAt: now, order: 999, archived: false }
+    const subject: Subject = { ...s, id: uid(), createdAt: new Date().toISOString(), order: 999, archived: false }
     setData((prev) => {
       const subjects = [...prev.subjects, subject]
       store.putSubject(subject)
@@ -129,7 +128,7 @@ useEffect(() => {
 
   const updateSubject: AppDataCtx['updateSubject'] = useCallback((id, patch) => {
     setData((prev) => {
-      const subjects = prev.subjects.map((s) => (s.id === id ? { ...s, ...patch, updatedAt: new Date().toISOString() } : s))
+      const subjects = prev.subjects.map((s) => (s.id === id ? { ...s, ...patch } : s))
       const updated = subjects.find((s) => s.id === id)
       if (updated) store.putSubject(updated)
       return { ...prev, subjects }
@@ -156,7 +155,6 @@ useEffect(() => {
           archived: false,
           order: i,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         }))
       toAdd.forEach((s) => store.putSubject(s))
       return { ...prev, subjects: [...prev.subjects, ...toAdd] }
@@ -165,8 +163,7 @@ useEffect(() => {
 
   // ---------- Topics ----------
   const addTopic: AppDataCtx['addTopic'] = useCallback((t) => {
-    const now = new Date().toISOString()
-    const topic: Topic = { ...t, id: uid(), createdAt: now, updatedAt: now, order: 999, minutesStudied: 0 }
+    const topic: Topic = { ...t, id: uid(), createdAt: new Date().toISOString(), order: 999, minutesStudied: 0 }
     setData((prev) => {
       const topics = [...prev.topics, topic]
       store.putTopic(topic)
@@ -177,7 +174,7 @@ useEffect(() => {
 
   const updateTopic: AppDataCtx['updateTopic'] = useCallback((id, patch) => {
     setData((prev) => {
-      const topics = prev.topics.map((t) => (t.id === id ? { ...t, ...patch, updatedAt: new Date().toISOString() } : t))
+      const topics = prev.topics.map((t) => (t.id === id ? { ...t, ...patch } : t))
       const updated = topics.find((t) => t.id === id)
       let next = { ...prev, topics }
       if (updated) store.putTopic(updated)
@@ -195,8 +192,7 @@ useEffect(() => {
 
   // ---------- Tasks ----------
   const addTask: AppDataCtx['addTask'] = useCallback((t) => {
-    const now = new Date().toISOString()
-    const task: Task = { ...t, id: uid(), createdAt: now, updatedAt: now, completed: false, completedAt: null }
+    const task: Task = { ...t, id: uid(), createdAt: new Date().toISOString(), completed: false, completedAt: null }
     setData((prev) => {
       const tasks = [...prev.tasks, task]
       store.putTask(task)
@@ -207,7 +203,7 @@ useEffect(() => {
 
   const updateTask: AppDataCtx['updateTask'] = useCallback((id, patch) => {
     setData((prev) => {
-      const tasks = prev.tasks.map((t) => (t.id === id ? { ...t, ...patch, updatedAt: new Date().toISOString() } : t))
+      const tasks = prev.tasks.map((t) => (t.id === id ? { ...t, ...patch } : t))
       const updated = tasks.find((t) => t.id === id)
       if (updated) store.putTask(updated)
       return { ...prev, tasks }
@@ -219,7 +215,7 @@ useEffect(() => {
       const tasks = prev.tasks.map((t) => {
         if (t.id !== id) return t
         const completed = !t.completed
-        return { ...t, completed, completedAt: completed ? new Date().toISOString() : null, updatedAt: new Date().toISOString() }
+        return { ...t, completed, completedAt: completed ? new Date().toISOString() : null }
       })
       const updated = tasks.find((t) => t.id === id)
       if (updated) store.putTask(updated)
@@ -266,11 +262,11 @@ useEffect(() => {
       let wellness: WellnessEntry[]
       let saved: WellnessEntry
       if (existingIdx >= 0) {
-        saved = { ...prev.wellness[existingIdx], ...entry, id: prev.wellness[existingIdx].id, updatedAt: new Date().toISOString() }
+        saved = { ...prev.wellness[existingIdx], ...entry, id: prev.wellness[existingIdx].id }
         wellness = [...prev.wellness]
         wellness[existingIdx] = saved
       } else {
-        saved = { ...entry, id: uid(), updatedAt: new Date().toISOString() } as WellnessEntry
+        saved = { ...entry, id: uid() } as WellnessEntry
         wellness = [...prev.wellness, saved]
       }
       store.putWellness(saved)
@@ -280,7 +276,7 @@ useEffect(() => {
 
   // ---------- Routine ----------
   const addRoutineBlock: AppDataCtx['addRoutineBlock'] = useCallback((r) => {
-    const block: RoutineBlock = { ...r, id: uid(), updatedAt: new Date().toISOString() }
+    const block: RoutineBlock = { ...r, id: uid() }
     setData((prev) => {
       store.putRoutineBlock(block)
       return { ...prev, routine: [...prev.routine, block] }
@@ -297,7 +293,7 @@ useEffect(() => {
   // ---------- Settings ----------
   const updateSettings: AppDataCtx['updateSettings'] = useCallback((patch) => {
     setData((prev) => {
-      const settings = { ...prev.settings, ...patch, updatedAt: new Date().toISOString() }
+      const settings = { ...prev.settings, ...patch }
       store.saveSettings(settings)
       return { ...prev, settings }
     })
