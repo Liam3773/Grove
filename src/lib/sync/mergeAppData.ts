@@ -64,9 +64,15 @@ function mergeAchievements(local: UnlockedAchievement[], remote: UnlockedAchieve
   return Array.from(byId.values())
 }
 
-function mergeSingleton<T extends { updatedAt?: string }>(local: T, remote: T | undefined): T {
+function mergeSingleton<T>(local: T, remote: T | undefined): T {
   if (!remote) return local
-  const winner = newerTimestamp(local.updatedAt, remote.updatedAt)
+
+  const localUpdatedAt = (local as { updatedAt?: string }).updatedAt
+  const remoteUpdatedAt = (remote as { updatedAt?: string }).updatedAt
+
+  if (!localUpdatedAt && !remoteUpdatedAt) return local
+
+  const winner = newerTimestamp(localUpdatedAt, remoteUpdatedAt)
   return winner === 'b' ? remote : local
 }
 
