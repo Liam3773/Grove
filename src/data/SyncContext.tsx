@@ -99,7 +99,14 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         setUser(nextUser)
         setAuthLoading(false)
 
-        if (!nextUser) {
+        if (nextUser) {
+          // Instead of waiting for a separate useEffect to notice `user` changed
+          // and then setting `initializing = true`, which allows a render to slip
+          // through where `user` is set but `initializing` is false (causing App.tsx
+          // to briefly think the account is settled and redirect to /onboarding),
+          // we set it synchronously here.
+          setInitializing(true)
+        } else {
           setPhase('local')
           setPendingMerge(false)
           setErrorMessage(null)
@@ -129,6 +136,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     async function initialSync(uid: string) {
       setPhase('syncing')
       setErrorMessage(null)
+      // (initializing is already true from the auth listener, but we ensure it here too)
       setInitializing(true)
       try {
         const remote = await fetchRemoteData(uid)
