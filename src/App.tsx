@@ -11,6 +11,7 @@ import Settings from './pages/Settings'
 import Onboarding from './pages/Onboarding'
 import SubjectDetail from './pages/SubjectDetail'
 import Account from './pages/Account'
+import Community from './pages/Community'
 
 export default function App() {
   const { loading, data } = useAppData()
@@ -65,6 +66,7 @@ export default function App() {
           <Route path="/plan" element={<Plan />} />
           <Route path="/progress" element={<ProgressPage />} />
           <Route path="/world" element={<World />} />
+          <Route path="/community" element={<Community />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/account" element={<Account />} />
           <Route path="/subjects/:id" element={<SubjectDetail />} />

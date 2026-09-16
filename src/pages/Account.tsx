@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Mail, Lock, LogOut, RefreshCw, CloudOff, CloudCheck, Loader2 } from 'lucide-react'
+import { Mail, Lock, LogOut, RefreshCw, CloudOff, CloudCheck, Loader2, User as UserIcon } from 'lucide-react'
 import { useSync, type SyncStatus } from '../data/SyncContext'
 import { Card, PageHeader, Button } from '../components/ui'
 
@@ -63,7 +63,7 @@ export default function Account() {
 function SignedOutPanel({
   signUp, signIn, onSkip,
 }: {
-  signUp: (email: string, password: string) => Promise<void>
+  signUp: (email: string, password: string, username?: string) => Promise<void>
   signIn: (email: string, password: string) => Promise<void>
   onSkip: () => void
 }) {
@@ -73,6 +73,7 @@ function SignedOutPanel({
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
+  const [username, setUsername] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
@@ -81,6 +82,8 @@ function SignedOutPanel({
     if (!email.trim() || !email.includes('@')) return 'Please enter a valid email.'
     if (password.length < 6) return 'Password must be at least 6 characters.'
     if (mode === 'create' && password !== confirm) return 'Passwords don\u2019t match.'
+    if (mode === 'create' && !username.trim()) return 'Please enter a username.'
+    if (mode === 'create' && !/^[a-zA-Z0-9_]{3,15}$/.test(username.trim())) return 'Username must be 3-15 characters and contain only letters, numbers, and underscores.'
     return null
   }
 
@@ -95,7 +98,7 @@ function SignedOutPanel({
     setError(null)
     try {
       if (mode === 'create') {
-        await signUp(email.trim(), password)
+        await signUp(email.trim(), password, username.trim())
       } else {
         await signIn(email.trim(), password)
       }
@@ -133,6 +136,9 @@ function SignedOutPanel({
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-3">
+        {mode === 'create' && (
+          <LabeledInput icon={UserIcon} type="text" placeholder="Username" value={username} onChange={setUsername} autoComplete="off" />
+        )}
         <LabeledInput icon={Mail} type="email" placeholder="Email" value={email} onChange={setEmail} autoComplete="email" />
         <LabeledInput icon={Lock} type="password" placeholder="Password" value={password} onChange={setPassword} autoComplete={mode === 'create' ? 'new-password' : 'current-password'} />
         {mode === 'create' && (

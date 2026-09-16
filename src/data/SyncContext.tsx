@@ -201,7 +201,18 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   }, [data, user, available, isOnline, pendingMerge, phase])
 
   // ---------- Public actions ----------
-  const signUp = useCallback(async (email: string, password: string) => {
+  const signUp = useCallback(async (email: string, password: string, username?: string) => {
+    // Only used if they provide a username during sign up (community features)
+    if (username) {
+      const { checkUsernameAvailable, claimUsername } = await import('../lib/sync/communityService')
+      const isAvailable = await checkUsernameAvailable(username)
+      if (!isAvailable) {
+        throw new Error('That username is already taken.')
+      }
+      const user = await registerWithEmail(email, password)
+      await claimUsername(user.uid, username)
+      return
+    }
     await registerWithEmail(email, password)
   }, [])
 
