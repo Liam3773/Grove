@@ -1,4 +1,4 @@
-import { openDB, type IDBPDatabase } from 'idb'
+import { openDB, deleteDB, type IDBPDatabase } from 'idb'
 import type {
   AppData,
   Settings,
@@ -21,7 +21,9 @@ import { emptyAppData, DEFAULT_SETTINGS } from './defaults'
  * with cloud sync without changing the rest of the app.
  */
 
-const DB_NAME = 'grove-db'
+let dbNameCache = localStorage.getItem('grove_last_uid')
+  ? `grove-db-${localStorage.getItem('grove_last_uid')}`
+  : 'grove-db'
 
 // v1 -> v2:
 // settings and world were incorrectly created as out-of-line key stores.
@@ -45,9 +47,15 @@ const SINGLETON_STORES = new Set(['settings', 'world'])
 
 let dbPromise: Promise<IDBPDatabase> | null = null
 
+function getDBName() {
+  const activeUid = localStorage.getItem('grove_last_uid')
+  return activeUid ? `grove-db-${activeUid}` : 'grove-db'
+}
+
 function getDB() {
   if (!dbPromise) {
-    dbPromise = openDB(DB_NAME, DB_VERSION, {
+    dbNameCache = getDBName()
+    dbPromise = openDB(dbNameCache, DB_VERSION, {
       upgrade(db, oldVersion) {
         // Migrate the broken v1 singleton stores.
         //
@@ -120,6 +128,50 @@ async function deleteOne(store: string, id: string) {
 }
 
 // ---------- Public API ----------
+
+export async function setActiveUser(uid: string | null): Promise<AppData | null> {
+  const currentUid = localStorage.getItem('grove_last_uid')
+
+  if (currentUid === (uid ?? null)) {
+    return null
+  }
+
+  let localSnapshot: AppData | null = null
+
+  // Transitioning from logged-out -> logged-in: capture the snapshot
+  if (!currentUid && uid) {
+    localSnapshot = await loadAppData()
+  }
+
+  if (uid) {
+    localStorage.setItem('grove_last_uid', uid)
+  } else {
+    localStorage.removeItem('grove_last_uid')
+  }
+
+  if (dbPromise) {
+    const db = await dbPromise
+    db.close()
+    dbPromise = null
+  }
+
+  return localSnapshot
+}
+
+export function getActiveUser(): string | null {
+  return localStorage.getItem('grove_last_uid')
+}
+
+export async function clearUnauthDatabase(): Promise<void> {
+  // If we are currently unauthenticated, do nothing (we don't want to wipe the active db by accident if state changed)
+  const currentUid = localStorage.getItem('grove_last_uid')
+  if (!currentUid) {
+    return
+  }
+
+  // Delete the unauthenticated database
+  await deleteDB('grove-db')
+}
 
 export async function loadAppData(): Promise<AppData> {
   const db = await getDB()
