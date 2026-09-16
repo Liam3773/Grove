@@ -33,7 +33,10 @@ export default function App() {
   }
 
   const needsOnboarding =
-    !data.settings.onboardingComplete && location.pathname !== '/onboarding' && location.pathname !== '/account'
+    !data.settings.onboardingComplete &&
+    location.pathname !== '/onboarding' &&
+    location.pathname !== '/account' &&
+    location.pathname !== '/settings'
 
   if (needsOnboarding) {
     return (
@@ -41,6 +44,7 @@ export default function App() {
         <Route path="*" element={<Navigate to="/onboarding" replace />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/account" element={<Account />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
     )
   }
