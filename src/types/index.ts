@@ -17,6 +17,7 @@ export interface Subject {
   archived: boolean
   order: number
   createdAt: string
+  updatedAt?: string
 }
 
 export type TopicStatus = 'not_started' | 'learning' | 'practising' | 'confident' | 'mastered'
@@ -29,6 +30,7 @@ export interface Topic {
   minutesStudied: number
   order: number
   createdAt: string
+  updatedAt?: string
 }
 
 // ---------- Tasks ----------
@@ -46,6 +48,7 @@ export interface Task {
   completedAt: string | null
   notes: string
   createdAt: string
+  updatedAt?: string
   /** Day-of-week (0=Mon..6=Sun) this task is planned for, used by the weekly planner */
   plannedDay: number | null
 }
@@ -78,6 +81,7 @@ export interface WellnessEntry {
   hydration: boolean
   mood: 1 | 2 | 3 | 4 | 5 | null
   breakTaken: boolean
+  updatedAt?: string
 }
 
 // ---------- Routine (repeating school week) ----------
@@ -88,6 +92,7 @@ export interface RoutineBlock {
   label: string
   subjectId: ID | null
   durationMinutes: number
+  updatedAt?: string
 }
 
 // ---------- Achievements ----------

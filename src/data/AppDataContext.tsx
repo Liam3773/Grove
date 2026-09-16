@@ -86,6 +86,9 @@ interface AppDataCtx {
   exportData: () => Promise<string>
   importData: (json: string) => Promise<void>
   resetData: () => Promise<void>
+
+  // auth hook
+  switchUser: (uid: string | null) => Promise<AppData | null>
 }
 
 const Ctx = createContext<AppDataCtx | null>(null)
@@ -190,6 +193,7 @@ export function AppDataProvider({
       ...s,
       id: uid(),
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       order: 999,
       archived: false,
     }
@@ -207,7 +211,7 @@ export function AppDataProvider({
     (id, patch) => {
       setData((prev) => {
         const subjects = prev.subjects.map((s) =>
-          s.id === id ? { ...s, ...patch } : s
+          s.id === id ? { ...s, ...patch, updatedAt: new Date().toISOString() } : s
         )
 
         const updated = subjects.find((s) => s.id === id)
@@ -282,13 +286,14 @@ export function AppDataProvider({
 
           subjectsToAdd.push({
             ...suggested,
-            id: uid(),
+            id: `suggested-${normalizedName}`,
             priority: 'medium',
             targetWeeklyMinutes: 120,
             examDate: null,
             archived: false,
             order: freshSubjects.length + subjectsToAdd.length,
             createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           })
         }
 
@@ -334,6 +339,7 @@ export function AppDataProvider({
       ...t,
       id: uid(),
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       order: 999,
       minutesStudied: 0,
     }
@@ -352,7 +358,7 @@ export function AppDataProvider({
     (id, patch) => {
       setData((prev) => {
         const topics = prev.topics.map((t) =>
-          t.id === id ? { ...t, ...patch } : t
+          t.id === id ? { ...t, ...patch, updatedAt: new Date().toISOString() } : t
         )
 
         const updated = topics.find((t) => t.id === id)
@@ -394,6 +400,7 @@ export function AppDataProvider({
       ...t,
       id: uid(),
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       completed: false,
       completedAt: null,
     }
@@ -412,7 +419,7 @@ export function AppDataProvider({
     (id, patch) => {
       setData((prev) => {
         const tasks = prev.tasks.map((t) =>
-          t.id === id ? { ...t, ...patch } : t
+          t.id === id ? { ...t, ...patch, updatedAt: new Date().toISOString() } : t
         )
 
         const updated = tasks.find((t) => t.id === id)
@@ -441,6 +448,7 @@ export function AppDataProvider({
             completedAt: completed
               ? new Date().toISOString()
               : null,
+            updatedAt: new Date().toISOString(),
           }
         })
 
@@ -503,6 +511,7 @@ export function AppDataProvider({
                     minutesStudied:
                       t.minutesStudied +
                       session.actualMinutes,
+                    updatedAt: new Date().toISOString(),
                   }
                 : t
             )
@@ -550,6 +559,7 @@ export function AppDataProvider({
               ...prev.wellness[existingIdx],
               ...entry,
               id: prev.wellness[existingIdx].id,
+              updatedAt: new Date().toISOString(),
             }
 
             wellness = [...prev.wellness]
@@ -558,6 +568,7 @@ export function AppDataProvider({
             saved = {
               ...entry,
               id: uid(),
+              updatedAt: new Date().toISOString(),
             } as WellnessEntry
 
             wellness = [...prev.wellness, saved]
@@ -581,6 +592,7 @@ export function AppDataProvider({
       const block: RoutineBlock = {
         ...r,
         id: uid(),
+        updatedAt: new Date().toISOString(),
       }
 
       setData((prev) => {
@@ -651,6 +663,15 @@ export function AppDataProvider({
     setData(emptyAppData())
   }, [])
 
+  const switchUser: AppDataCtx['switchUser'] = useCallback(async (uid) => {
+    setLoading(true)
+    const localSnapshot = await store.setActiveUser(uid)
+    const loaded = await store.loadAppData()
+    setData(loaded)
+    setLoading(false)
+    return localSnapshot
+  }, [])
+
   const value: AppDataCtx = {
     data,
     loading,
@@ -684,6 +705,8 @@ export function AppDataProvider({
     exportData,
     importData,
     resetData,
+
+    switchUser,
   }
 
   return (

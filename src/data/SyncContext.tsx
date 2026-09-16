@@ -5,6 +5,8 @@ import { firebaseConfigured } from '../lib/firebase'
 import { isAuthAvailable, subscribeToAuthChanges, registerWithEmail, loginWithEmail, logout } from '../lib/sync/authService'
 import { isSyncAvailable, fetchRemoteData, pushLocalData } from '../lib/sync/firestoreSync'
 import { mergeAppData, hasLocalContent } from '../lib/sync/mergeAppData'
+import { clearUnauthDatabase } from './dataStore'
+import type { AppData } from '../types'
 
 /**
  * SyncContext.tsx
@@ -46,7 +48,7 @@ const Ctx = createContext<SyncCtx | null>(null)
 const AUTO_SYNC_DEBOUNCE_MS = 3000
 
 export function SyncProvider({ children }: { children: React.ReactNode }) {
-  const { data, importData } = useAppData()
+  const { data, importData, switchUser } = useAppData()
 
   const [user, setUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -75,20 +77,43 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const localSnapshotRef = useRef<AppData | null>(null)
+
   // ---------- Auth subscription ----------
   useEffect(() => {
+    let active = true
+
     const unsubscribe = subscribeToAuthChanges((nextUser) => {
-      setUser(nextUser)
-      setAuthLoading(false)
-      if (!nextUser) {
-        setPhase('local')
-        setPendingMerge(false)
-        setErrorMessage(null)
-        setInitializing(false)
+      // Must async/await inside to guarantee we switch user context
+      const handleAuthChange = async () => {
+        const snapshot = await switchUser(nextUser?.uid ?? null)
+
+        if (!active) return
+
+        if (snapshot) {
+          localSnapshotRef.current = snapshot
+        } else if (!nextUser) {
+          localSnapshotRef.current = null
+        }
+
+        setUser(nextUser)
+        setAuthLoading(false)
+
+        if (!nextUser) {
+          setPhase('local')
+          setPendingMerge(false)
+          setErrorMessage(null)
+          setInitializing(false)
+        }
       }
+
+      handleAuthChange()
     })
-    return unsubscribe
-  }, [])
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [switchUser])
 
   // ---------- First sync after sign-in ----------
   const prevUidRef = useRef<string | null>(null)
@@ -110,7 +135,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         if (cancelled) return
 
         if (remote === null) {
-          if (hasLocalContent(dataRef.current)) {
+          if (localSnapshotRef.current && hasLocalContent(localSnapshotRef.current)) {
             // First time this account has connected anywhere — let the
             // person decide what to do with what's already on this device.
             setPendingMerge(true)
@@ -122,9 +147,14 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
           return
         }
 
-        const merged = mergeAppData(dataRef.current, remote)
+        const snapshot = localSnapshotRef.current ?? dataRef.current
+        const merged = mergeAppData(snapshot, remote)
         await importData(JSON.stringify(merged))
         await pushLocalData(uid, merged)
+        if (localSnapshotRef.current) {
+          await clearUnauthDatabase()
+          localSnapshotRef.current = null
+        }
         if (!cancelled) setPhase('synced')
       } catch (error) {
         console.error('Grove: initial sync failed, continuing locally.', error)
@@ -197,7 +227,15 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     setPhase('syncing')
     setErrorMessage(null)
     try {
-      await pushLocalData(user.uid, dataRef.current)
+      if (localSnapshotRef.current) {
+        const merged = mergeAppData(localSnapshotRef.current, dataRef.current)
+        await importData(JSON.stringify(merged))
+        await pushLocalData(user.uid, merged)
+        await clearUnauthDatabase()
+        localSnapshotRef.current = null
+      } else {
+        await pushLocalData(user.uid, dataRef.current)
+      }
       setPhase('synced')
     } catch (error) {
       console.error('Grove: syncing existing local grove failed.', error)
@@ -206,11 +244,12 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setPendingMerge(false)
     }
-  }, [user])
+  }, [user, importData])
 
   const dismissMerge = useCallback(() => {
     setPendingMerge(false)
     setPhase('local')
+    localSnapshotRef.current = null
   }, [])
 
   const status: SyncStatus = useMemo(() => {
