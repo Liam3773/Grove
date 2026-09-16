@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Timer, CalendarDays, TrendingUp, Trees } from 'lucide-react'
+import { Home, Timer, CalendarDays, TrendingUp, Trees, Users } from 'lucide-react'
 
 const ITEMS = [
   { to: '/', label: 'Home', icon: Home, end: true },
@@ -7,6 +7,7 @@ const ITEMS = [
   { to: '/plan', label: 'Plan', icon: CalendarDays, end: false },
   { to: '/progress', label: 'Progress', icon: TrendingUp, end: false },
   { to: '/world', label: 'World', icon: Trees, end: false },
+  { to: '/community', label: 'Community', icon: Users, end: false },
 ]
 
 export function BottomNav() {

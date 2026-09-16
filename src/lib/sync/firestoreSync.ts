@@ -1,10 +1,11 @@
-import { collection, doc, getDoc, getDocs, writeBatch } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, writeBatch, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { emptyAppData } from '../../data/defaults'
 import type {
   AppData, Subject, Topic, Task, StudySession, WellnessEntry, RoutineBlock, UnlockedAchievement,
   Settings, WorldState,
 } from '../../types'
+import { computeLifetimeStats } from '../stats'
 
 /**
  * firestoreSync.ts
@@ -76,6 +77,16 @@ export async function pushLocalData(uid: string, data: AppData): Promise<void> {
   const metaBatch = writeBatch(database)
   metaBatch.set(metaRef, { settings: data.settings, world: data.world }, { merge: true })
   await metaBatch.commit()
+
+  // Update public profile for leaderboards
+  const stats = computeLifetimeStats(data)
+  const profileRef = doc(database, 'profiles', uid)
+  // We only update totalStudyMinutes here; we don't want to overwrite the username
+  // if it's already set by the communityService during signup.
+  await setDoc(profileRef, {
+    uid,
+    totalStudyMinutes: stats.totalStudyMinutes
+  }, { merge: true })
 
   const collectionsData: Record<Subcollection, { id: string }[]> = {
     subjects: data.subjects,
