@@ -45,6 +45,11 @@ export default function App() {
     )
   }
 
+  // If we are on the onboarding route but onboarding is actually complete, redirect to home.
+  if (data.settings.onboardingComplete && location.pathname === '/onboarding') {
+    return <Navigate to="/" replace />
+  }
+
   const showNav = location.pathname !== '/onboarding'
 
   return (
