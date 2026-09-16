@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Mail, Lock } from 'lucide-react'
 import { useAppData } from '../data/AppDataContext'
@@ -9,8 +9,16 @@ import { WorldScene } from '../features/world/WorldScene'
 
 export default function Onboarding() {
   const { updateSettings, seedSuggestedSubjects } = useAppData()
+  const { user } = useSync()
   const navigate = useNavigate()
-  const [step, setStep] = useState(0)
+  const [step, setStep] = useState(user ? 1 : 0)
+
+  // If the user authenticates while on step 0, automatically push them to step 1
+  useEffect(() => {
+    if (user && step === 0) {
+      setStep(1)
+    }
+  }, [user, step])
   const [name, setName] = useState('')
   const [chosen, setChosen] = useState<string[]>([])
   const [target, setTarget] = useState(90)
